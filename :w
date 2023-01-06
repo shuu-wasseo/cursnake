@@ -1,0 +1,53 @@
+import curses
+from datetime import datetime as dt
+from datetime import timedelta as td
+
+s = ["ysy", "jhr", "ljw", "kcy", "kyy", "ksm", "knk", "gyb", "ked", "sdh"]
+
+stdscr = curses.initscr()
+
+if curses.has_colors():
+    curses.start_color()
+
+curses.init_color(2, 0, 100, 0)
+curses.init_color(3, 0, 0, 100)
+
+curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
+
+lastsec = dt.now()
+
+def psnake(scr, lis, dir):
+    global lastsec
+
+    if (dt.now() - lastsec).seconds > 1:
+        lastsec = dt.now()
+        y, x = lis[-1]
+        match dir:
+            case "up":
+                newc = (y-1, x)
+            case "down":
+                newc = (y+1, x)
+            case "left":
+                newc = (y, x-1)
+            case "left":
+                newc = (y, x+1)
+            case _:
+                newc = (y, x+1)
+        lis = lis[1:] + [newc]
+
+    for y, x in lis:
+        scr.chgat(y, x*2, 2, curses.A_REVERSE)
+    scr.refresh()
+    return lis
+    
+def main(stdscr):
+    snakewin = curses.newwin(curses.LINES-1, curses.COLS, 1, 0)
+    pixels = [(round(curses.LINES/2), x) for x in range(4)]
+    dir = "right"
+    curses.curs_set(0)
+
+    while True:
+        pixels = psnake(snakewin, pixels, dir)
+        
+curses.wrapper(main)
