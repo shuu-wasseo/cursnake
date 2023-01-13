@@ -11,9 +11,12 @@ curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_RED)
 
 lastsec = dt.now()
 
+initlen = 20
+interval = 69420 # in microseconds
+
 def reapple(lis, apple):
     while 1:
-        napple = randint(0, curses.LINES-2), round(randint(0, curses.COLS-1)/2)
+        napple = randint(0, curses.LINES-2), round(randint(0, curses.COLS-2)/2)
         if napple not in lis + [apple]:
             apple = napple
             break
@@ -31,11 +34,14 @@ def psnake(scr, lis, dir, apple, move=False, die=False):
     scr.clear()
 
     y, x = lis[-1]
+    
+    dir = [dir[-1], dir[-1]]
+
     if not die:
         if move:
             if apple in lis:
                 y, x = apple 
-            match dir:
+            match dir[-1]:
                 case "up":
                     newc = (y-1, x)
                 case "down":
@@ -52,9 +58,9 @@ def psnake(scr, lis, dir, apple, move=False, die=False):
             else:
                 lis = lis[1:] + [newc]
         if sorted(list(set(lis))) != sorted(lis):
-            lis, apple, die = psnake(scr, lis, dir, apple, move=False, die=True)
+            lis, apple, die, dir = psnake(scr, lis, dir, apple, move=False, die=True)
             die = True
-            return lis, apple, die
+            return lis, apple, die, dir
     for y, x in lis:
         if not die:
             try:
@@ -62,7 +68,7 @@ def psnake(scr, lis, dir, apple, move=False, die=False):
             except:
                 lis, apple, die = psnake(scr, lis, dir, apple, move=False, die=True)
                 die = True
-                return lis, apple, die
+                return lis, apple, die, dir
         else:
             try:
                 scr.addstr(y, x*2, "  " if x*2+1 != curses.COLS else " ", curses.color_pair(1))
@@ -70,7 +76,7 @@ def psnake(scr, lis, dir, apple, move=False, die=False):
                 pass 
         scr.addstr(apple[0], apple[1]*2, "  ", curses.color_pair(1))
     scr.refresh()
-    return lis, apple, die 
+    return lis, apple, die, dir
 
 def main(stdscr):
     global lastsec
@@ -78,19 +84,19 @@ def main(stdscr):
     snakewin = curses.newwin(curses.LINES-1, curses.COLS, 1, 0)
     snakewin.nodelay(True)
     snakewin.keypad(1)
-    pixels = [(round(curses.LINES/2), x) for x in range(20)]
-    dir = "right"
+    pixels = [(round(curses.LINES/2), x) for x in range(initlen)]
+    dir = ["right"]
     curses.curs_set(0)
     apple = reapple(pixels, (0, 0))
-    pixels, apple, die = psnake(snakewin, pixels, dir, apple)
+    pixels, apple, die, dir = psnake(snakewin, pixels, dir, apple)
     die = False
 
     while True:
         brk = False
         if not die:
             while True:
-                if (dt.now() - lastsec).microseconds > 69420:
-                    pixels, apple, die = psnake(snakewin, pixels, dir, apple, True)
+                if (dt.now() - lastsec).microseconds > interval:
+                    pixels, apple, die, dir = psnake(snakewin, pixels, dir, apple, True)
                     lastsec = dt.now()
                 c = snakewin.getch()
                 if c != -1:
@@ -102,25 +108,25 @@ def main(stdscr):
                             snakewin = curses.newwin(curses.LINES-1, curses.COLS, 1, 0)
                             snakewin.nodelay(True)
                             snakewin.keypad(1)
-                            pixels = [(round(curses.LINES/2), x) for x in range(20)]
-                            dir = "right"
+                            pixels = [(round(curses.LINES/2), x) for x in range(initlen)]
+                            dir = ["right"]
                             curses.curs_set(0)
                             apple = reapple(pixels, (0, 0))
-                            pixels, apple, die = psnake(snakewin, pixels, dir, apple)
+                            pixels, apple, die, dir = psnake(snakewin, pixels, dir, apple)
                             die = False
                             continue
                         case "ă":
-                            if dir != "down":
-                                dir = "up"
+                            if "down" not in dir:
+                                dir = [dir[-1], "up"]
                         case "Ą":
-                            if dir != "right":
-                                dir = "left"
+                            if "right" not in dir:
+                                dir = [dir[-1], "left"]
                         case "Ă":
-                            if dir != "up":
-                                dir = "down"
+                            if "up" not in dir:
+                                dir = [dir[-1], "down"]
                         case "ą":
-                            if dir != "left":
-                                dir = "right"
+                            if "left" not in dir:
+                                dir = [dir[-1], "right"]
                 if die:
                     break
         c = snakewin.getch()
@@ -132,11 +138,11 @@ def main(stdscr):
                     snakewin = curses.newwin(curses.LINES-1, curses.COLS, 1, 0)
                     snakewin.nodelay(True)
                     snakewin.keypad(1)
-                    pixels = [(round(curses.LINES/2), x) for x in range(20)]
+                    pixels = [(round(curses.LINES/2), x) for x in range(initlen)]
                     dir = "right"
                     curses.curs_set(0)
                     apple = reapple(pixels, (0, 0))
-                    pixels, apple, die = psnake(snakewin, pixels, dir, apple)
+                    pixels, apple, die, dir = psnake(snakewin, pixels, dir, apple)
                     die = False
                     continue 
         if brk:
